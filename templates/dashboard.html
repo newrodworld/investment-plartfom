@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Platform - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: orange;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .balance {
+            font-weight: bold;
+            color: green;
+            font-size: 24px;
+        }
+        
+        .nav {
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .nav button {
+            padding: 12px 24px;
+            border: none;
+            background: #ff6b35;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .nav button.active {
+            background: #e55a2b;
+        }
+        
+        .content {
+            padding: 20px;
+        }
+        
+        .section {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: #ff6b35;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .message {
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💰 Investment Platform</h1>
+        <div class="balance">$<span id="balanceDisplay">0.00</span></div>
+    </div>
+    
+    <div class="nav">
+        <button onclick="showSection('dashboard')" class="active">🏠 Dashboard</button>
+        <button onclick="showSection('invest')">📈 Invest</button>
+        <button onclick="showSection('products')">📦 Products</button>
+        <button onclick="showSection('wallet')">💳 Wallet</button>
+        <button onclick="logout()" style="margin-left: auto;">🚪 Logout</button>
+    </div>
+    
+    <div class="content">
+        <div id="message" class="message"></div>
+        
+        <!-- Dashboard Section -->
+        <div id="dashboard" class="section active">
+            <h2>Welcome, <span id="usernameDisplay">User</span>! 👋</h2>
+            <div class="card">
+                <h3>Your Role: <span id="roleDisplay">-</span></h3>
+                <p>Balance: $<span id="totalBalance">0.00</span></p>
+            </div>
+            <div class="card">
+                <h3>Quick Actions</h3>
+                <button class="btn" onclick="showSection('invest')">💸 Start Investing</button>
+                <button class="btn" onclick="showSection('wallet')">💰 Deposit Funds</button>
+                <button class="btn" onclick="showSection('products')" id="createProductBtn" style="display:none;">📦 Create Product</button>
+            </div>
+        </div>
+        
+        <!-- Invest Section -->
+        <div id="invest" class="section">
+            <div class="card">
+                <h2>📈 Investment Opportunities</h2>
+                <p>Browse available products and start earning up to 20% returns!</p>
+                <div id="investmentOpportunities">
+                    <p>Loading investment opportunities...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Products Section -->
+        <div id="products" class="section">
+            <div class="card">
+                <h2>📦 Product Management</h2>
+                <div id="productsList">
+                    <p>Product features will appear here...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Wallet Section -->
+        <div id="wallet" class="section">
+            <div class="card">
+                <h2>💳 Wallet Management</h2>
+                <p>Current Balance: $<span id="walletBalance">0.00</span></p>
+                
+                <div class="card">
+                    <h3>💰 Deposit Funds</h3>
+                    <div class="form-group">
+                        <label>Amount ($):</label>
+                        <input type="number" id="depositAmount" placeholder="Enter amount">
+                    </div>
+                    <button class="btn" onclick="deposit()">💳 Deposit</button>
+                </div>
+                
+                <div class="card">
+                    <h3>💸 Withdraw Funds</h3>
+                    <div class="form-group">
+                        <label>Amount ($):</label>
+                        <input type="number" id="withdrawAmount" placeholder="Enter amount">
+                    </div>
+                    <button class="btn" onclick="withdraw()">🏧 Withdraw</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        function showSection(sectionName) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all nav buttons
+            const buttons = document.querySelectorAll('.nav button');
+            buttons.forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName).classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+        
+        async function loadUserData() {
+            try {
+                const response = await fetch('/api/user');
+                currentUser = await response.json();
+                
+                // Update user info
+                document.getElementById('usernameDisplay').textContent = currentUser.username;
+                document.getElementById('balanceDisplay').textContent = currentUser.balance.toFixed(2);
+                document.getElementById('totalBalance').textContent = currentUser.balance.toFixed(2);
+                document.getElementById('walletBalance').textContent = currentUser.balance.toFixed(2);
+                document.getElementById('roleDisplay').textContent = currentUser.role;
+                
+                // Show create product button for beneficiaries
+                if (currentUser.role === 'beneficiary') {
+                    document.getElementById('createProductBtn').style.display = 'inline-block';
+                }
+                
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
+        }
+        
+        async function deposit() {
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            if (!amount || amount <= 0) {
+                showMessage('Please enter a valid amount', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/deposit', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ amount })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    document.getElementById('depositAmount').value = '';
+                    loadUserData();
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Error processing deposit', 'error');
+            }
+        }
+        
+        async function withdraw() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            if (!amount || amount <= 0) {
+                showMessage('Please enter a valid amount', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/withdraw', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ amount })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    document.getElementById('withdrawAmount').value = '';
+                    loadUserData();
+                } else {
+                    showMessage(result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Error processing withdrawal', 'error');
+            }
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/logout';
+            }
+        }
+        
+        // Load user data when page loads
+        document.addEventListener('DOMContentLoaded', loadUserData);
+    </script>
+</body>
+</html>
